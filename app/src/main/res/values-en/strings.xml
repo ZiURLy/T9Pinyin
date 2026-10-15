@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Phone Pinyin T9</string>
+    <string name="xposed_description">Lets the dial pad of Google Phone find Chinese contacts by pinyin (full or initials). Only active inside Google Phone; does not change your contacts and needs no permission.</string>
+</resources>
