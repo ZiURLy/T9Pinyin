@@ -32,7 +32,9 @@ object ContactRepository {
                     result += PhoneContact(cursor.getLong(idCol), name, number)
                 }
             }
-        }
-        return result.distinctBy { "\${it.contactId}:\${it.number}" }
+        } ?: DiagnosticLog.w("CONTACT_QUERY", "ContactsContract returned null cursor")
+        val contacts = result.distinctBy { "${it.contactId}:${it.number}" }
+        DiagnosticLog.i("CONTACT_QUERY", "rows=" + result.size + " distinct=" + contacts.size)
+        return contacts
     }
 }
