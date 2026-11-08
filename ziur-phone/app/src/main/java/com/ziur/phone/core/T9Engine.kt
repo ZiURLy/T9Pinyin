@@ -4,11 +4,9 @@ import android.icu.text.Transliterator
 import java.text.Normalizer
 import java.util.Locale
 
-/** Local-only T9 matcher using Android ICU Han-Latin transliteration. */
+/** Local T9 conversion with full-pinyin and initials matching. */
 object T9Engine {
-    private val hanLatin by lazy {
-        Transliterator.getInstance("Han-Latin; Latin-ASCII")
-    }
+    private val hanLatin by lazy { Transliterator.getInstance("Han-Latin; Latin-ASCII") }
     private val keyMap = mapOf(
         'a' to '2', 'b' to '2', 'c' to '2',
         'd' to '3', 'e' to '3', 'f' to '3',
@@ -19,17 +17,24 @@ object T9Engine {
         't' to '8', 'u' to '8', 'v' to '8',
         'w' to '9', 'x' to '9', 'y' to '9', 'z' to '9'
     )
+
+    fun latinForName(name: String): String = hanLatin.transliterate(name.lowercase(Locale.ROOT))
+
     fun digitsForName(name: String): String {
-        val latin = hanLatin.transliterate(name.lowercase(Locale.ROOT))
-        val folded = Normalizer.normalize(latin, Normalizer.Form.NFD)
+        val folded = Normalizer.normalize(latinForName(name), Normalizer.Form.NFD)
             .filterNot { Character.getType(it) == Character.NON_SPACING_MARK.toInt() }
-        return buildString {
-            folded.forEach { c -> keyMap[c]?.let(::append) }
-        }
+        return buildString { folded.forEach { c -> keyMap[c]?.let(::append) } }
     }
+
+    fun initialsForName(name: String): String =
+        latinForName(name).split(Regex("[^\\p{L}]+"))
+            .filter { it.isNotBlank() }
+            .mapNotNull { word -> word.firstOrNull()?.lowercaseChar()?.let(keyMap::get) }
+            .joinToString("")
+
     fun matches(name: String, query: String): Boolean {
         val digits = query.filter(Char::isDigit)
         if (digits.isEmpty()) return false
-        return digitsForName(name).contains(digits)
+        return digitsForName(name).contains(digits) || initialsForName(name).contains(digits)
     }
 }
